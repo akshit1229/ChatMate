@@ -1,10 +1,11 @@
-import { generateAIResponse } from "../lib/groq.js"; 
+import { generateAIResponse } from "../lib/groq.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 
-// The AI assistant's ID (we'll create this user in the database)
-const AI_USER_ID = process.env.AI_USER_ID || "ai-assistant";
+// Public robot avatar as a fallback placeholder
+const AI_AVATAR_URL =
+  "https://api.dicebear.com/7.x/bottts/svg?seed=chatmate-ai";
 
 export const setupAIUser = async () => {
   try {
@@ -20,8 +21,7 @@ export const setupAIUser = async () => {
           Math.random().toString(36) + Date.now().toString(36),
           10
         ),
-        profilePic:
-          "./ChatAi.jpg", // Add an AI avatar image to your public folder
+        profilePic: AI_AVATAR_URL,
       });
       await aiUser.save();
       console.log("AI assistant account created with ID:", aiUser._id);
@@ -39,11 +39,30 @@ export const sendMessageToAI = async (req, res) => {
     const { text } = req.body;
     const senderId = req.user._id;
 
-    // Get or create AI user
+    // Get AI user
     const aiUser = await User.findOne({ email: "ai@chatmate.com" });
     if (!aiUser) {
       return res.status(500).json({ error: "AI assistant not configured" });
     }
+
+    // Fetch the last 10 messages for conversation history context
+    const recentMessages = await Message.find({
+      $or: [
+        { senderId, receiverId: aiUser._id },
+        { senderId: aiUser._id, receiverId: senderId },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    // Reverse to chronological order and build history array
+    const history = recentMessages
+      .reverse()
+      .map((msg) => ({
+        role: msg.senderId.toString() === senderId.toString() ? "user" : "assistant",
+        content: msg.text,
+      }));
 
     // Save user message
     const userMessage = new Message({
@@ -53,8 +72,8 @@ export const sendMessageToAI = async (req, res) => {
     });
     await userMessage.save();
 
-    // Generate AI response
-    const aiResponse = await generateAIResponse(text);
+    // Generate AI response with conversation history
+    const aiResponse = await generateAIResponse(text, history);
 
     // Save AI response
     const aiMessage = new Message({

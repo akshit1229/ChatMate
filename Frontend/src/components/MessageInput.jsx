@@ -224,7 +224,7 @@ const MessageInput = () => {
           className="input input-bordered rounded-full flex-grow focus:outline-none focus:ring-2 focus:ring-primary"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
           disabled={isLoading}
           autoComplete="off"
         />

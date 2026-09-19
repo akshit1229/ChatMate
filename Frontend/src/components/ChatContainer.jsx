@@ -16,6 +16,7 @@ const ChatContainer = () => {
     selectedUser,
     subscribeToMessages,
     unsubscribeFromMessages,
+    isAITyping,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
@@ -143,6 +144,25 @@ const ChatContainer = () => {
               </div>
             </div>
           ))
+        )}
+        {/* AI Typing Indicator */}
+        {isAITyping && isAIChat && (
+          <div className="chat chat-start">
+            <div className="chat-image avatar">
+              <div className="size-10 rounded-full border">
+                <img
+                  src={selectedUser.profilePic || "/avatar.png"}
+                  alt="AI"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
+            </div>
+            <div className="chat-bubble bg-secondary text-secondary-content flex items-center gap-1 px-4 py-3">
+              <span className="animate-bounce delay-0 w-2 h-2 rounded-full bg-current inline-block" />
+              <span className="animate-bounce delay-150 w-2 h-2 rounded-full bg-current inline-block" style={{ animationDelay: "150ms" }} />
+              <span className="animate-bounce delay-300 w-2 h-2 rounded-full bg-current inline-block" style={{ animationDelay: "300ms" }} />
+            </div>
+          </div>
         )}
         <div ref={messageEndRef} />
       </div>

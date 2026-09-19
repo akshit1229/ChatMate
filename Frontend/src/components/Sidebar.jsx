@@ -16,8 +16,8 @@ const Sidebar = () => {
     getUsers();
   }, [getUsers]);
 
-  // Sort users to ensure AI chat is always at the top
-  const sortedUsers = users.sort((a, b) => {
+  // Sort users to ensure AI chat is always at the top (spread to avoid mutating store)
+  const sortedUsers = [...users].sort((a, b) => {
     // AI chat always comes first
     if (a.email === "ai@chatmate.com") return -1;
     if (b.email === "ai@chatmate.com") return 1;

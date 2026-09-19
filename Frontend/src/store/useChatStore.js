@@ -9,7 +9,8 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
-  aiUser: null, // You had this defined twice - removed the duplicate
+  isAITyping: false,
+  aiUser: null,
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -126,24 +127,24 @@ export const useChatStore = create((set, get) => ({
       return get().sendMessage({ text });
     }
     
+    // Show user message immediately (optimistic UI)
+    const tempUserMsg = {
+      _id: Date.now().toString(),
+      senderId: authUser._id,
+      receiverId: selectedUser._id,
+      text,
+      createdAt: new Date().toISOString(),
+      temporary: true
+    };
+    
+    set({ messages: [...messages, tempUserMsg], isAITyping: true });
+    
     try {
-      // Show user message immediately (optimistic UI)
-      const tempUserMsg = {
-        _id: Date.now().toString(),
-        senderId: authUser._id,
-        receiverId: selectedUser._id,
-        text,
-        createdAt: new Date().toISOString(),
-        temporary: true
-      };
-      
-      set({ messages: [...messages, tempUserMsg] });
-      
       // Call AI endpoint
       const res = await axiosInstance.post("/ai/chat", { text });
       
       // Replace temporary message and add AI response
-      const updatedMessages = messages.filter(m => !m.temporary);
+      const updatedMessages = get().messages.filter(m => !m.temporary);
       set({ 
         messages: [
           ...updatedMessages, 
@@ -155,7 +156,9 @@ export const useChatStore = create((set, get) => ({
       console.error("Failed to send message to AI:", error);
       toast.error("Failed to send message to AI");
       // Remove temporary message on error
-      set({ messages: messages.filter(m => !m.temporary) });
+      set({ messages: get().messages.filter(m => !m.temporary) });
+    } finally {
+      set({ isAITyping: false });
     }
   },
 }));

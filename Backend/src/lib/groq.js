@@ -23,25 +23,29 @@ export const groqClient = axios.create({
   timeout: 30000, // 30 seconds timeout
 });
 
-export const generateAIResponse = async (message, retryCount = 0) => {
+export const generateAIResponse = async (message, history = [], retryCount = 0) => {
   const maxRetries = 2;
   
   try {
     console.log("Sending request to Groq API for:", message);
     
+    // Build messages array: system prompt + conversation history + new user message
+    const messages = [
+      {
+        role: "system",
+        content: "You are ChaTai, a helpful AI assistant inside the ChatMate app. Provide clear, concise, and helpful responses.",
+      },
+      ...history,
+      {
+        role: "user",
+        content: message,
+      },
+    ];
+
     const response = await groqClient.post("", {
       model: GROQ_MODEL,
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful AI assistant. Provide clear, concise, and helpful responses."
-        },
-        {
-          role: "user",
-          content: message
-        }
-      ],
-      max_tokens: 500,
+      messages,
+      max_tokens: 1024,
       temperature: 0.7,
       top_p: 0.9,
       frequency_penalty: 0.1,
@@ -71,7 +75,7 @@ export const generateAIResponse = async (message, retryCount = 0) => {
         if (retryCount < maxRetries) {
           console.log(`Rate limit hit, retrying... (${retryCount + 1}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-          return generateAIResponse(message, retryCount + 1);
+          return generateAIResponse(message, history, retryCount + 1);
         }
         return "I'm being rate limited. Please wait a moment and try again.";
       }
@@ -89,7 +93,7 @@ export const generateAIResponse = async (message, retryCount = 0) => {
         if (retryCount < maxRetries) {
           console.log(`Server error, retrying... (${retryCount + 1}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
-          return generateAIResponse(message, retryCount + 1);
+          return generateAIResponse(message, history, retryCount + 1);
         }
         return "The AI service is temporarily unavailable. Please try again later.";
       }
@@ -98,7 +102,7 @@ export const generateAIResponse = async (message, retryCount = 0) => {
     if (error.code === 'ECONNABORTED' && retryCount < maxRetries) {
       console.log(`Request timed out, retrying... (${retryCount + 1}/${maxRetries})`);
       await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-      return generateAIResponse(message, retryCount + 1);
+      return generateAIResponse(message, history, retryCount + 1);
     }
     
     return "Sorry, I couldn't process your request at the moment. Please try again later.";
