@@ -67,7 +67,7 @@ Welcome to **ChatMate**, a real-time chat application built using the MERN stack
 
    ```env
    PORT=5000
-   MONGO_URI=your_mongodb_uri
+   MONGODB_URI=your_mongodb_uri
    JWT_SECRET=your_jwt_secret
    NODE_ENV=development
    CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name

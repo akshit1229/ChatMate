@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 import path from "path";
+import { fileURLToPath } from "url";
 
 import { connectDB } from "./lib/db.js";
 
@@ -17,7 +18,8 @@ import { setupAIUser } from "./controllers/ai.controller.js";
 dotenv.config();
 
 const PORT = process.env.PORT;
-const __dirname = path.resolve();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const frontendDist = path.join(__dirname, "../../Frontend/dist");
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
@@ -34,15 +36,15 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/ai", aiRoutes);
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../Frontend/dist")));
+  app.use(express.static(frontendDist));
 
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../Frontend", "dist", "index.html"));
+    res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
 
 server.listen(PORT, async () => {
   console.log("server is running on PORT:" + PORT);
-  connectDB();
+  await connectDB();
   await setupAIUser(); // Setup AI user in database
 });
