@@ -5,7 +5,8 @@ config();
 
 // Groq API configuration
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "llama-3.1-8b-instant"; // Fast and reliable model
+// Override with the GROQ_MODEL env var if Groq retires this model again
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
 
 // Check if the API key exists
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -45,11 +46,10 @@ export const generateAIResponse = async (message, history = [], retryCount = 0) 
     const response = await groqClient.post("", {
       model: GROQ_MODEL,
       messages,
-      max_tokens: 1024,
+      max_completion_tokens: 2048, // reasoning tokens count toward this limit
+      reasoning_effort: "low",
       temperature: 0.7,
       top_p: 0.9,
-      frequency_penalty: 0.1,
-      presence_penalty: 0.1,
       stream: false,
     });
     
